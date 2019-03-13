@@ -1,6 +1,13 @@
 # Not really that important to hide, but... just for good practice ;-)
 src/credentials-fire.js
+
+# Only removed to make it easier for someone to start a new project
+# Can comment these out for a cloned project
 .firebase
+.firebaserc
+firebase.json
+firestore.indexes.json
+firestore.rules
 
 # no need to upload this to git
 build
