@@ -5,7 +5,7 @@ You need a firebase account and firebase credentials + firebase CLI to get the l
 ## setup your firebase
 
 create a credentials-fire.js file in the ./src/ folder that exports a default object like so.<br>
-`
+```javascript
 export default {
     apiKey: 'YOUR_API_KEY_HERE',
     authDomain: 'vegiburgerco.firebaseapp.com',
@@ -14,7 +14,7 @@ export default {
     storageBucket: 'vegiburgerco.appspot.com',
     messagingSenderId: "28328392"
 }
-`
+```
 <br>
 
 run 'firebase init' once you have the firebase cli installed globally <br>
