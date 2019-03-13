@@ -17,7 +17,7 @@ export default {
 `
 <br>
 
-Its probably best if you remove all the firebase files and run 'firebase init' once you have the firebase cli installed globally <br>
+Its probably best if you remove all the firebase files ( in the root folder only, do not remove ./src/fireConfig.js and run 'firebase init' once you have the firebase cli installed globally <br>
 https://firebase.google.com/docs/cli/ <br>
 
 #### `npm start`
