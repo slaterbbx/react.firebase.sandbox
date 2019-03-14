@@ -18,22 +18,30 @@ const initialState = {
 
 const reducer = (state = initialState, action) => {
 
+    const getPrice = state.price[action.payload]
+
     switch (action.type) {
         case actionTypes.ADD_INGREDIENT:
+
         return {
             ...state,
                 ingredients: {
                     ...state.ingredients,
                     [action.payload]: state.ingredients[action.payload] + 1
-                }
+                },
+                totalPrice: state.totalPrice + getPrice
         }
         case actionTypes.DEL_INGREDIENT:
+
+        console.log(getPrice);
+
         return {
             ...state,
                 ingredients: {
                     ...state.ingredients,
                     [action.payload]: state.ingredients[action.payload] - 1
-                }
+                },
+                totalPrice: state.totalPrice - getPrice
         }
         default: 
         return state;
