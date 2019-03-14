@@ -4,8 +4,6 @@ import styled from 'styled-components';
 const Wrapper = styled.div`
     padding: 2rem;
 
-    
-
     h1 {
         font-size: 2.4rem;
         margin-bottom: 1rem;
