@@ -1,3 +1,5 @@
+// TODO: first time re-auth modal opens, and you use it, password is invalid, probably undefined. Look into this and fix
+
 import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
@@ -8,11 +10,18 @@ import * as action from '../../../store/actions'
 import EmailValidator from '../Validators/EmailValidator/EmailValidator';
 import Modal from '../../UI/Modal/Modal';
 
+import reAuthHelper from './reAuthHelper';
+
 const userAccount = props => {
+	
+	const user = firebase.auth.currentUser;
+	// EmailAuthProvider is from firebase/app ( poor documentation on this )
+	const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword);
 
 	const [ needReLogin, setNeedReLogin ] = useState(false);
-
-	const user = firebase.auth.currentUser;
+	// confirm delete account
+	const [ delAccount, setDelAccount ] = useState(false);
+	const [ delAccountModal, setDelAccountModal ] = useState(false);
 
     const signOutHandler = () => {
         firebase.auth.signOut().then(() => {
@@ -20,62 +29,68 @@ const userAccount = props => {
           }).catch(error => {
             // An error happened.
           });
-	}
-	
-	const deleteUserHandler = () => {
-
-		// ADD A "ARE YOU SURE YOU WANT TO DELETE YOUR ACCOUNT!?"
-
-		user.delete().then(function() {
-			// User deleted.
-		}).catch(function(error) {
-			props.onFail(true, error.code, error.message)
-
-			// ADD SAME FUNCTIONALITY HERE AS IN EMAIL HANDLER FOR RE-VALIDATION
-			// MAKE HELPER FUNCTION TO CLEAN SOME OF THIS UP.
-		});
-	}
+	}	
 
     const updateEmailHandler = () => {
 		if (props.authEmail.validity) {	
 			user.updateEmail(props.authEmail.current).then(() => {
 				// Update successful.
-			}).catch(function(error) {
-				if (error.code === 'auth/requires-recent-login') {
-					// Only shows when re-login is required due to time to reset email address
-					setNeedReLogin(true);
-					props.onFail(true, error.code, error.message)
 
-				} else if ( error.code !== 'auth/requires-recent-login' ) {
-					setNeedReLogin(false);
-					props.onFail(true, error.code, error.message)
-				}
+			}).catch(function(error) {
+				// Using reAuthHelper to clean up code
+				// Decided on this for now instead of a generic error handler becaues of specific cases
+				const reAuth = reAuthHelper(error.code, error.message)
+				setNeedReLogin(reAuth.setNeedReLogin)
+				props.onFail(reAuth.error.value, reAuth.error.code, reAuth.error.message)
 			});
 		} else {
 			setNeedReLogin(false);
 			props.onFail(true, 'invalid email', 'please use a valid email address')
 		}
 	}
+
+	console.log(user.email, props.authPassword)
 	
 	const reAuthenticateHandler = () => {
-		// EmailAuthProvider is from firebase/app ( poor documentation on this )
-		const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword);
 		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
-		// User re-authenticated.
+			// User re-authenticated.
+			console.log('RE AUTHENTICATED!!!!')
 		}).catch(function(error) {
-		// An error happened.
-		console.log(error);
+			// An error happened.
+			console.log(error);
 		});
 		setNeedReLogin(false);
 	}
 
-    let email, uid;
-    if (user != null) {
-      email = user.email;
-      uid = user.uid; 
+	const closeModalHandler = () => {
+		setDelAccountModal(false);
 	}
 
-	console.log(needReLogin)
+	const deleteUserHandler = () => {
+		// "ARE YOU SURE YOU WANT TO DELETE YOUR ACCOUNT!?"
+		// opens special modal with delete account confirm button
+		// If error is returned for needs re-auth on account, auto re-opens new modal with re-auth functionality
+		if (delAccount === false){
+			setDelAccountModal(true);
+		}
+	}
+
+	const confirmDeleteUserHandler = () => {
+		setDelAccount(true);
+		setDelAccountModal(false);
+
+			user.delete().then(function() {
+				// User deleted.
+			}).catch(function(error) {
+				// Using reAuthHelper to clean up code
+
+				// if needs re-auth error code returns, changes state for setNeedReLogin and opens new modal
+				const reAuth = reAuthHelper(error.code, error.message)
+				setNeedReLogin(reAuth.setNeedReLogin)
+				props.onFail(reAuth.error.value, reAuth.error.code, reAuth.error.message)
+			});
+	}
+
 
 	let markup;
 	if ( needReLogin === true ) {
@@ -83,11 +98,11 @@ const userAccount = props => {
 		markup = (
 			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
                 <p>{props.authFail.errorMessage}</p>
-				<PasswordValidator label="UPDATE YOUR PASSWORD"/>
+				<PasswordValidator />
 				<button onClick={reAuthenticateHandler}>RE AUTH</button>
         	</Modal>
 		)
-	} else {
+	} else if ( needReLogin === false ) {
 		markup = (
 			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
                 <p>{props.authFail.errorMessage}</p>
@@ -95,14 +110,29 @@ const userAccount = props => {
 		)
 	}
 	
+	// Delete user account
+	if ( delAccountModal === true ) {
+		markup = (
+			<Modal show={delAccountModal} deactive={closeModalHandler}>
+                <p>Are you sure that you want to delete your account?</p>
+				<button onClick={confirmDeleteUserHandler}>YES DELETE IT</button>
+        	</Modal>
+		)
+	}
 
+	let email, uid;
+    if (user != null) {
+      email = user.email;
+      uid = user.uid; 
+	}
+	
     return (
         <>
         <p>{email}</p>
         <p>{uid}</p>
         <button onClick={signOutHandler}>LOGOUT</button><br />
         <button onClick={deleteUserHandler}>DELETE ACCOUNT!</button>
-        <EmailValidator label="UPDATE YOUR EMAIL" />
+        <EmailValidator label="UPDATE YOUR EMAIL ADDRESS" />
         <button onClick={updateEmailHandler}>Update Email</button>
 
 		{markup}
