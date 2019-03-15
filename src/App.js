@@ -21,25 +21,26 @@ class App extends Component {
 
     render() {
 
-    return (
-      <ThemeProvider theme={defaultTheme}>
-      <>
-      <GlobalBaseStyle />
-      <GlobalUtilities />
-            <Layout>
-                <Switch>
-                    <Route path="/" exact component={BurgerBuilder}/>
-                    <Route path="/user" exact component={User}/>
-                    <Route path="/user/tos" exact component={Tos}/>
-                    <Route render={() => <Suspense fallback={<div>Loading...</div>}><ErrorPage /></Suspense>} />
-                </Switch>
-            </Layout>
-      </>
-      </ThemeProvider>
-    );
+		return (
+		<ThemeProvider theme={defaultTheme}>
+		<>
+		<GlobalBaseStyle />
+		<GlobalUtilities />
+				<Layout>
+					<Switch>
+						<Route path="/" exact component={BurgerBuilder}/>
+						<Route path="/user" exact component={User}/>
+						<Route path="/user/tos" exact component={Tos}/>
+						<Route render={() => <Suspense fallback={<div>Loading...</div>}><ErrorPage /></Suspense>} />
+					</Switch>
+				</Layout>
+		</>
+		</ThemeProvider>
+		);
   }
 }
 
 export default App;
 
+// found out about update blocking, happens with redux and react-router on the same level
 // https://reacttraining.com/react-router/web/guides/dealing-with-update-blocking
