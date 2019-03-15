@@ -4,7 +4,7 @@ export {
 } from './burger';
 
 export {
-    auth,
+	auth,
     authChange,
     authClear,
     authFail,

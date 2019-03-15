@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
 import * as firebase from '../../../fireConfig';
@@ -10,8 +10,9 @@ import Modal from '../../UI/Modal/Modal';
 
 const userAccount = props => {
 
+	const [ needReLogin, setNeedReLogin ] = useState(false);
+
 	const user = firebase.auth.currentUser;
-	const onFailMapThis = props.onFail;
 
     const signOutHandler = () => {
         firebase.auth.signOut().then(() => {
@@ -22,10 +23,16 @@ const userAccount = props => {
 	}
 	
 	const deleteUserHandler = () => {
+
+		// ADD A "ARE YOU SURE YOU WANT TO DELETE YOUR ACCOUNT!?"
+
 		user.delete().then(function() {
 			// User deleted.
 		}).catch(function(error) {
-			onFailMapThis(true, error.code, error.message)
+			props.onFail(true, error.code, error.message)
+
+			// ADD SAME FUNCTIONALITY HERE AS IN EMAIL HANDLER FOR RE-VALIDATION
+			// MAKE HELPER FUNCTION TO CLEAN SOME OF THIS UP.
 		});
 	}
 
@@ -34,23 +41,60 @@ const userAccount = props => {
 			user.updateEmail(props.authEmail.current).then(() => {
 				// Update successful.
 			}).catch(function(error) {
-				onFailMapThis(true, error.code, error.message)
 				if (error.code === 'auth/requires-recent-login') {
-					// In future make more convenient method to update email instead of log out and back in
+					// Only shows when re-login is required due to time to reset email address
+					setNeedReLogin(true);
+					props.onFail(true, error.code, error.message)
+
+				} else if ( error.code !== 'auth/requires-recent-login' ) {
+					setNeedReLogin(false);
+					props.onFail(true, error.code, error.message)
 				}
 			});
 		} else {
-			onFailMapThis(true, 'invalid email', 'please use a valid email address')
+			setNeedReLogin(false);
+			props.onFail(true, 'invalid email', 'please use a valid email address')
 		}
-    }
+	}
+	
+	const reAuthenticateHandler = () => {
+		// EmailAuthProvider is from firebase/app ( poor documentation on this )
+		const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword);
+		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
+		// User re-authenticated.
+		}).catch(function(error) {
+		// An error happened.
+		console.log(error);
+		});
+		setNeedReLogin(false);
+	}
 
     let email, uid;
     if (user != null) {
       email = user.email;
       uid = user.uid; 
 	}
+
+	console.log(needReLogin)
+
+	let markup;
+	if ( needReLogin === true ) {
+		// if re-login is needed, we show the passwordValidator
+		markup = (
+			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
+                <p>{props.authFail.errorMessage}</p>
+				<PasswordValidator label="UPDATE YOUR PASSWORD"/>
+				<button onClick={reAuthenticateHandler}>RE AUTH</button>
+        	</Modal>
+		)
+	} else {
+		markup = (
+			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
+                <p>{props.authFail.errorMessage}</p>
+        	</Modal>
+		)
+	}
 	
-	// <PasswordValidator label="UPDATE YOUR PASSWORD"/>
 
     return (
         <>
@@ -61,9 +105,7 @@ const userAccount = props => {
         <EmailValidator label="UPDATE YOUR EMAIL" />
         <button onClick={updateEmailHandler}>Update Email</button>
 
-        <Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
-                <p>{props.authFail.errorMessage}</p>
-        </Modal>
+		{markup}
         </>
     )
 }
@@ -79,7 +121,7 @@ const mapStateToProps = state => {
 const mapDispatchToProps = dispatch => {
   return {
     onFail: (isFail, code, message) => dispatch(action.authFail(isFail, code, message)),
-    onFailDismiss: () => dispatch(action.authFail(false)),
+	onFailDismiss: () => dispatch(action.authFail(false)),
   }
 }
 
