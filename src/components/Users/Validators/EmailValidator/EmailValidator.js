@@ -24,18 +24,19 @@ class emailValidator extends Component {
             if (this.props.label) {
                 newCreds.label = this.props.label;
             } else {
-                newCreds.label = 'Enter a valid email';
+				newCreds.label = 'Enter a valid email';
+				isValid = false;
             }
         } else if (validEmail) {
             newCreds.validity = 1; // success
-            newCreds.label = 'Looks good to me!';
+			newCreds.label = 'Looks good to me!';
+			isValid = true;
         } else if (curEmail && !validEmail) {
             newCreds.validity = 2; // warning
             newCreds.label = 'Email must be valid';
-            isValid = true;
+            isValid = false;
         }
 
-        // NOT PASSING Errors yet
         this.props.onChangeEmail(curEmail, isValid)
 
         this.setState({
@@ -75,7 +76,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
     return {
-        onChangeEmail: (curEmail, validity, error) => dispatch(action.authValidation('email', curEmail, validity, error))
+        onChangeEmail: (curEmail, validity) => dispatch(action.authValidation('email', curEmail, validity))
     }
 }
 
