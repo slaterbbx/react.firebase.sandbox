@@ -37,9 +37,11 @@ class UserLogin extends Component {
             <Styles.Wrapper>
             <form id="login" onSubmit={this.loginHandler.bind(null, 'login')} className="row">
                 <div className="row">
+                    {/* email validation and value handled by redux */}
                     <EmailValidator />
                 </div>
                 <div className="row">
+                    {/* password validation and value handled by redux */}
                     <PasswordValidator/>
                 </div>
                 <div className="row u-global-alignCenter">
@@ -56,7 +58,7 @@ class UserLogin extends Component {
                         radio name="agreement"
                         label="Don't Accept"/>
                 </div>
-                </form>
+            </form>
                 <div className="u-global-marginBottom-tiny u-global-fullWidth">
                     <Button fullWidth light disabled={!this.state.acceptTerms}
                     type="submit" form="login">
@@ -81,18 +83,12 @@ class UserLogin extends Component {
 
         return(
             <>
-            <Modal show={this.props.authFail.isFail} deactive={this.props.onFailDismiss}><p>{this.props.authFail.errorMessage}</p></Modal>
+            <Modal show={this.props.authFail.isFail} deactive={this.props.onFailDismiss}>
+                <p>{this.props.authFail.errorMessage}</p>
+            </Modal>
             {markup}
             </>
         );
-    }
-};
-
-const mapDispatchToProps = dispatch => {
-    return {
-        onAuth: (type, email, password) => dispatch(action.auth(type, email, password)),
-        onFailDismiss: () => dispatch(action.authFail(false)),
-        onClearFields: () => dispatch(action.authClear())
     }
 };
 
@@ -103,6 +99,14 @@ const mapStateToProps = state => {
         authFail: state.user.authFail,
         authPassword: state.user.password.current,
         authEmail: state.user.email.current,
+    }
+};
+
+const mapDispatchToProps = dispatch => {
+    return {
+        onAuth: (type, email, password) => dispatch(action.auth(type, email, password)),
+        onFailDismiss: () => dispatch(action.authFail(false)),
+        onClearFields: () => dispatch(action.authClear())
     }
 };
 

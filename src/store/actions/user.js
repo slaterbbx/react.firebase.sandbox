@@ -23,13 +23,13 @@ export const authLoading = (payload) => {
     }
 }
 
-export const authValidation = (type, current, validity, error) => {
+export const authValidation = (type, current, validity) => {
     return {
         type: actionTypes.AUTH_VALIDATION,
         validityType: type,
         current: current,
         validity: validity, 
-        errorMessage: error
+        // errorMessage: error
     }
 }
 

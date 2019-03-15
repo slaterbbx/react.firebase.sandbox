@@ -1,49 +1,86 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
+import { connect } from 'react-redux';
 import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
 import * as firebase from '../../../fireConfig';
 
-import EmailValidator from '../Validators/EmailValidator/EmailValidator';
-const user = firebase.auth.currentUser;
-class userAccount extends Component {
+import * as action from '../../../store/actions'
 
-    signOutHandler = () => {
+import EmailValidator from '../Validators/EmailValidator/EmailValidator';
+import Modal from '../../UI/Modal/Modal';
+
+const userAccount = props => {
+
+	const user = firebase.auth.currentUser;
+	const onFailMapThis = props.onFail;
+
+    const signOutHandler = () => {
         firebase.auth.signOut().then(() => {
             // Sign-out successful.
           }).catch(error => {
             // An error happened.
           });
+	}
+	
+	const deleteUserHandler = () => {
+		user.delete().then(function() {
+			// User deleted.
+		}).catch(function(error) {
+			onFailMapThis(true, error.code, error.message)
+		});
+	}
+
+    const updateEmailHandler = () => {
+		if (props.authEmail.validity) {	
+			user.updateEmail(props.authEmail.current).then(() => {
+				// Update successful.
+			}).catch(function(error) {
+				onFailMapThis(true, error.code, error.message)
+				if (error.code === 'auth/requires-recent-login') {
+					// In future make more convenient method to update email instead of log out and back in
+				}
+			});
+		} else {
+			onFailMapThis(true, 'invalid email', 'please use a valid email address')
+		}
     }
 
-    updateEmailHandler = () => {
-        user.updateEmail("user@example.com").then(function() {
-            // Update successful.
-          }).catch(function(error) {
-            // An error happened.
-          });
-    }
-
-    render() {
-
-        const user = firebase.auth.currentUser;
-        console.log(user);
-
-        let email, uid;
-
-        if (user != null) {
-        email = user.email;
-        uid = user.uid; 
-        }
+    let email, uid;
+    if (user != null) {
+      email = user.email;
+      uid = user.uid; 
+	}
+	
+	// <PasswordValidator label="UPDATE YOUR PASSWORD"/>
 
     return (
         <>
         <p>{email}</p>
         <p>{uid}</p>
-        <button onClick={this.signOutHandler}>LOGOUT</button>
+        <button onClick={signOutHandler}>LOGOUT</button><br />
+        <button onClick={deleteUserHandler}>DELETE ACCOUNT!</button>
         <EmailValidator label="UPDATE YOUR EMAIL" />
-        <PasswordValidator label="UPDATE YOUR PASSWORD"/>
+        <button onClick={updateEmailHandler}>Update Email</button>
+
+        <Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
+                <p>{props.authFail.errorMessage}</p>
+        </Modal>
         </>
     )
-    }
 }
 
-export default userAccount;
+const mapStateToProps = state => {
+  return {
+    authFail: state.user.authFail,
+    authPassword: state.user.password.current,
+    authEmail: state.user.email,
+  }
+}
+
+const mapDispatchToProps = dispatch => {
+  return {
+    onFail: (isFail, code, message) => dispatch(action.authFail(isFail, code, message)),
+    onFailDismiss: () => dispatch(action.authFail(false)),
+  }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(userAccount);

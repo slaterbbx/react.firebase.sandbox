@@ -19,7 +19,7 @@ export function* authSaga(action) {
     } else if (action.loginType === 'create') {
         try {
             const authRes = yield firebase.auth.createUserWithEmailAndPassword(action.email, action.password)
-            console.log('login resulted in', authRes);
+            console.log('create resulted in', authRes);
         } catch (error) {
             const code = error.code;
             const message = error.message;
