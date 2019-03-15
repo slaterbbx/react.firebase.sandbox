@@ -1,4 +1,4 @@
-import * as firebase from 'firebase/app';
+import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
 
@@ -14,8 +14,10 @@ const config = {
   };
 const fire = firebase.initializeApp(config);
 
-export const auth = fire.auth()
+export const fb = firebase;
+export const auth = fire.auth();
 export const db = fire.firestore();
+
 
 // https://firebase.google.com/docs/cli/
 
