@@ -53,7 +53,7 @@ class layout extends PureComponent {
 
 const mapStateToProps = state => {
     return {
-        auth: state.user.authenticated
+        // auth: state.user.authenticated
     }
 }
 const mapDispatchToProps = dispatch => {
