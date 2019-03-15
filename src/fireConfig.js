@@ -16,7 +16,6 @@ const fire = firebase.initializeApp(config);
 
 export const auth = fire.auth()
 export const db = fire.firestore();
-db.settings({ timestampsInSnapshots: true }); // prevents warnings and errors in the console.
 
 // https://firebase.google.com/docs/cli/
 
