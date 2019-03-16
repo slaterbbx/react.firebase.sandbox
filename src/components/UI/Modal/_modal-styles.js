@@ -29,7 +29,6 @@ export const Modal = styled.div`
     `)}
 
     ${({hide}) => hide && css`
-        transition: all 0.4s ease-out;
         transform: translate(-50%, -200vh);
         opacity: 0;
     `};
