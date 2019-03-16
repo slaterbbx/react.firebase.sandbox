@@ -1,5 +1,3 @@
-// TODO: first time re-auth modal opens, and you use it, password is invalid, probably undefined. Look into this and fix
-
 import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
@@ -13,11 +11,11 @@ import Modal from '../../UI/Modal/Modal';
 import reAuthHelper from './reAuthHelper';
 
 const userAccount = props => {
-	
+
 	const user = firebase.auth.currentUser;
 	// EmailAuthProvider is from firebase/app ( poor documentation on this )
-	const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword);
 
+	const [ emailAddress, setEmailAddress ] = useState('');
 	const [ needReLogin, setNeedReLogin ] = useState(false);
 	// confirm delete account
 	const [ delAccount, setDelAccount ] = useState(false);
@@ -34,8 +32,10 @@ const userAccount = props => {
     const updateEmailHandler = () => {
 		if (props.authEmail.validity) {	
 			user.updateEmail(props.authEmail.current).then(() => {
-				// Update successful.
+				console.log('EMAIL UPDATED!!!!')
+				props.onResetEmail();
 
+				setEmailAddress(props.authEmail.current)
 			}).catch(function(error) {
 				// Using reAuthHelper to clean up code
 				// Decided on this for now instead of a generic error handler becaues of specific cases
@@ -48,13 +48,19 @@ const userAccount = props => {
 			props.onFail(true, 'invalid email', 'please use a valid email address')
 		}
 	}
-
-	console.log(user.email, props.authPassword)
 	
 	const reAuthenticateHandler = () => {
+
+		const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword.current);
+		console.log(credential)
 		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
 			// User re-authenticated.
 			console.log('RE AUTHENTICATED!!!!')
+			setDelAccountModal(false);
+			props.onFailDismiss();
+			props.onResetPassword();
+			updateEmailHandler();
+
 		}).catch(function(error) {
 			// An error happened.
 			console.log(error);
@@ -70,6 +76,8 @@ const userAccount = props => {
 		// "ARE YOU SURE YOU WANT TO DELETE YOUR ACCOUNT!?"
 		// opens special modal with delete account confirm button
 		// If error is returned for needs re-auth on account, auto re-opens new modal with re-auth functionality
+		// TODO: 
+		// Need a method to determine why I am re-authenticating, so that I can show the correct message after.
 		if (delAccount === false){
 			setDelAccountModal(true);
 		}
@@ -120,15 +128,17 @@ const userAccount = props => {
 		)
 	}
 
-	let email, uid;
+	let uid;
     if (user != null) {
-      email = user.email;
+		if (user.email !== emailAddress) {
+			setEmailAddress(user.email)
+		}
       uid = user.uid; 
 	}
 	
     return (
         <>
-        <p>{email}</p>
+        <p>{emailAddress}</p>
         <p>{uid}</p>
         <button onClick={signOutHandler}>LOGOUT</button><br />
         <button onClick={deleteUserHandler}>DELETE ACCOUNT!</button>
@@ -143,7 +153,7 @@ const userAccount = props => {
 const mapStateToProps = state => {
   return {
     authFail: state.user.authFail,
-    authPassword: state.user.password.current,
+    authPassword: state.user.password,
     authEmail: state.user.email,
   }
 }
@@ -152,6 +162,9 @@ const mapDispatchToProps = dispatch => {
   return {
     onFail: (isFail, code, message) => dispatch(action.authFail(isFail, code, message)),
 	onFailDismiss: () => dispatch(action.authFail(false)),
+	// we just fire these off based on event to reset the password and email to empty
+	onResetPassword: () => dispatch(action.authValidation('password', '', false)),
+	onResetEmail: () => dispatch(action.authValidation('email', '', false))
   }
 }
 
