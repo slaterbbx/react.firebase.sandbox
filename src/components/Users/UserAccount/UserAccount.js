@@ -1,108 +1,144 @@
+// This component is visable when the user is logged in via switch on User/User.js container
+
+// Using low level email and password validator components that store state in redux
+// we are able to drop those in here, catch errors that also dispatch to redux and use those to
+// manage error and reAuthentication that also uses the global low level password 
+// validator and current user email address to reAuth the user when needed. ( based on error code )
+
+// NOTE: should just create a global redux state for error handling, has a isError / code / message fields.
+
 import React, { useState } from 'react';
-import { connect } from 'react-redux';
-import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
 import * as firebase from '../../../fireConfig';
 
+import { connect } from 'react-redux';
 import * as action from '../../../store/actions'
 
+import PasswordValidator from '../Validators/PasswordValidator/PasswordValidator';
 import EmailValidator from '../Validators/EmailValidator/EmailValidator';
 import Modal from '../../UI/Modal/Modal';
 
 import reAuthHelper from './reAuthHelper';
 
 const userAccount = props => {
-
+	
 	const user = firebase.auth.currentUser;
-	// EmailAuthProvider is from firebase/app ( poor documentation on this )
 
 	const [ emailAddress, setEmailAddress ] = useState('');
-	const [ needReLogin, setNeedReLogin ] = useState(false);
+	const [ needReAuth, setNeedReAuth ] = useState(false);
 	// confirm delete account
 	const [ delAccount, setDelAccount ] = useState(false);
 	const [ delAccountModal, setDelAccountModal ] = useState(false);
 
     const signOutHandler = () => {
         firebase.auth.signOut().then(() => {
-            // Sign-out successful.
+			// Sign-out successful.
+			// Since authWatcher is global, will kick user out to login screen
           }).catch(error => {
-            // An error happened.
+			// An error happened.
+			console.log('[ ERROR > During SignOut ] ', error);
           });
 	}	
 
     const updateEmailHandler = () => {
-		if (props.authEmail.validity) {	
+		// if email is valid based on emailValidator validity in redux
+		if (props.authEmail.validity) {
 			user.updateEmail(props.authEmail.current).then(() => {
-				console.log('EMAIL UPDATED!!!!')
-				props.onResetEmail();
-
+				// should be optimal to set email locally to what should have been accepted by the update
+				// intead of what I was doing before and checking every page load if they matched.
 				setEmailAddress(props.authEmail.current)
+
+				// Reset email to an empty string
+				props.onResetEmail();
 			}).catch(function(error) {
-				// Using reAuthHelper to clean up code
-				// Decided on this for now instead of a generic error handler becaues of specific cases
+				// reAuthHelper determines if the error is related to a reAuth needed
 				const reAuth = reAuthHelper(error.code, error.message)
-				setNeedReLogin(reAuth.setNeedReLogin)
-				props.onFail(reAuth.error.value, reAuth.error.code, reAuth.error.message)
+				setNeedReAuth(reAuth.setNeedReAuth)
+				// send isFail bool, error code and error message to redux
+				props.onFail(reAuth.error.isFail, reAuth.error.code, reAuth.error.message)
 			});
 		} else {
-			setNeedReLogin(false);
+			setNeedReAuth(false);
 			props.onFail(true, 'invalid email', 'please use a valid email address')
 		}
 	}
 	
 	const reAuthenticateHandler = () => {
-
+		// EmailAuthProvider is from firebase/app ( poor documentation on this )
 		const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword.current);
-		console.log(credential)
+
 		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
 			// User re-authenticated.
-			console.log('RE AUTHENTICATED!!!!')
+			// Close modal used for delete account if its open
 			setDelAccountModal(false);
+			// Close modal for error message / reAuth if they are open
 			props.onFailDismiss();
+			// set password back to an empty string
 			props.onResetPassword();
-			updateEmailHandler();
+			// run update email handler ( only needs to runs when we are reAuth for email update )
+			if (props.authEmail.validity){
+				updateEmailHandler();
+			}
 
 		}).catch(function(error) {
 			// An error happened.
-			console.log(error);
+			console.log('[ ERROR > During ReAuth ] ' , error);
 		});
-		setNeedReLogin(false);
+		setNeedReAuth(false);
 	}
 
+	// used for closing any custom modals specific to this page functionality
 	const closeModalHandler = () => {
+		// closes custom delete account modal
 		setDelAccountModal(false);
 	}
 
 	const deleteUserHandler = () => {
 		// "ARE YOU SURE YOU WANT TO DELETE YOUR ACCOUNT!?"
-		// opens special modal with delete account confirm button
-		// If error is returned for needs re-auth on account, auto re-opens new modal with re-auth functionality
-		// TODO: 
-		// Need a method to determine why I am re-authenticating, so that I can show the correct message after.
+		// opens custom delete account modal containing a message and a confirm button
 		if (delAccount === false){
 			setDelAccountModal(true);
 		}
 	}
 
 	const confirmDeleteUserHandler = () => {
+		// We set delAccount to true, this means the user has confirmed they want to delete.
 		setDelAccount(true);
+		// We can now close the custom modal that is shown for delete account
 		setDelAccountModal(false);
 
 			user.delete().then(function() {
 				// User deleted.
+				// because the authWatcher is global, the page will reload back to the Auth screen
 			}).catch(function(error) {
-				// Using reAuthHelper to clean up code
-
-				// if needs re-auth error code returns, changes state for setNeedReLogin and opens new modal
+				// If error is that a reAuth is needed, then the reAuth modal will be shown
+				// reAuthHelper determines if the error is related to a reAuth needed
 				const reAuth = reAuthHelper(error.code, error.message)
-				setNeedReLogin(reAuth.setNeedReLogin)
-				props.onFail(reAuth.error.value, reAuth.error.code, reAuth.error.message)
+				setNeedReAuth(reAuth.setNeedReAuth)
+				// send isFail bool, error code and error message to redux
+				props.onFail(reAuth.error.isFail, reAuth.error.code, reAuth.error.message)
 			});
 	}
+	
 
+	// checks for email address validity between what is shown and what exists on the server
+	// server always wins when in doubt
+	let uid;
+	if (user != null) {
+		// set "emailAddress" state to the logged in users email address
+		// if check here so that we do not hit an infinate loop
+		if (user.email !== emailAddress) {
+			setEmailAddress(user.email)
+		}
+	// This is just shown for debugging / testing reasons, remove in future
+	uid = user.uid; 
+	}
 
+	// Dynamic page markup content
 	let markup;
-	if ( needReLogin === true ) {
-		// if re-login is needed, we show the passwordValidator
+	// reAuth modal
+	if ( needReAuth === true ) {
+		// if re-Auth is needed, we show the passwordValidator and a button to confirm reAuth
+		// the button fires the function for reAuth using the redux password Validators current value
 		markup = (
 			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
                 <p>{props.authFail.errorMessage}</p>
@@ -110,15 +146,16 @@ const userAccount = props => {
 				<button onClick={reAuthenticateHandler}>RE AUTH</button>
         	</Modal>
 		)
-	} else if ( needReLogin === false ) {
+	// all other errors modal
+	} else if ( needReAuth === false ) {
+		// if re-Auth is NOT needed, we only show the error message
 		markup = (
 			<Modal show={props.authFail.isFail} deactive={props.onFailDismiss}>
                 <p>{props.authFail.errorMessage}</p>
         	</Modal>
 		)
 	}
-	
-	// Delete user account
+	// Custom modal for delete user account confirmation
 	if ( delAccountModal === true ) {
 		markup = (
 			<Modal show={delAccountModal} deactive={closeModalHandler}>
@@ -127,15 +164,8 @@ const userAccount = props => {
         	</Modal>
 		)
 	}
-
-	let uid;
-    if (user != null) {
-		if (user.email !== emailAddress) {
-			setEmailAddress(user.email)
-		}
-      uid = user.uid; 
-	}
 	
+	// No styling for now, style this later
     return (
         <>
         <p>{emailAddress}</p>
@@ -160,7 +190,9 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
   return {
-    onFail: (isFail, code, message) => dispatch(action.authFail(isFail, code, message)),
+	// used to send any error messages that will be used to open the modal
+	onFail: (isFail, code, message) => dispatch(action.authFail(isFail, code, message)),
+	// Using to close the modal
 	onFailDismiss: () => dispatch(action.authFail(false)),
 	// we just fire these off based on event to reset the password and email to empty
 	onResetPassword: () => dispatch(action.authValidation('password', '', false)),
