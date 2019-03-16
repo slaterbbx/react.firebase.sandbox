@@ -6,6 +6,7 @@
 // validator and current user email address to reAuth the user when needed. ( based on error code )
 
 // NOTE: should just create a global redux state for error handling, has a isError / code / message fields.
+// then add that to userlogin, useraccount, emailvalidator and passwordvalidator
 
 import React, { useState } from 'react';
 import * as firebase from '../../../fireConfig';
@@ -63,7 +64,7 @@ const userAccount = props => {
 	}
 	
 	const reAuthenticateHandler = () => {
-		// EmailAuthProvider is from firebase/app ( poor documentation on this )
+		// EmailAuthProvider is from firebase/app ( poor / confusing documentation on this )
 		const credential = firebase.fb.auth.EmailAuthProvider.credential(user.email, props.authPassword.current);
 
 		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
@@ -130,7 +131,7 @@ const userAccount = props => {
 			setEmailAddress(user.email)
 		}
 	// This is just shown for debugging / testing reasons, remove in future
-	uid = user.uid; 
+	uid = user.uid;
 	}
 
 	// Dynamic page markup content

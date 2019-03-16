@@ -14,7 +14,7 @@ const config = {
   };
 const fire = firebase.initializeApp(config);
 
-export const fb = firebase;
+export const fb = firebase; // houses firebase auth providers like firebase.EmailAuthProvider()
 export const auth = fire.auth();
 export const db = fire.firestore();
 
