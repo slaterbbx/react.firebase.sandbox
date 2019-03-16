@@ -39,7 +39,6 @@ class passwordValidator extends Component {
             isValid = true;
         }
 
-        // NOT PASSING Errors yet
         this.props.onChangePassword(curPassword, isValid)
 
         this.setState({
@@ -80,7 +79,7 @@ const mapStateToProps = state => {
 
 const mapDispatchToProps = dispatch => {
     return {
-        onChangePassword: (curPassword, validity, error) => dispatch(action.authValidation('password', curPassword, validity, error))
+        onChangePassword: (curPassword, validity) => dispatch(action.authValidation('password', curPassword, validity))
     }
 }
 
