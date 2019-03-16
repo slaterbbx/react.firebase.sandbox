@@ -5,7 +5,16 @@ import { Link, NavLink } from 'react-router-dom';
 
 import { connect } from 'react-redux';
 
-const menuContent = (props) => (
+const menuContent = (props) => {
+
+	let userLinkTitle = '';
+	if ( props.auth ) {
+		userLinkTitle = 'Account'
+	} else {
+		userLinkTitle = 'Login'
+	}
+	
+	return (
         <Styles.Wrapper>
             <ul>
                 <li>
@@ -15,7 +24,7 @@ const menuContent = (props) => (
                         // search: '?quick-submit=true'
                     }} onClick={props.menuClick.bind(null, true)}>
                         <span><Icon name="users" /></span>
-                        Login
+                        {userLinkTitle}
                     </Link>
                 </li>
                 <li>
@@ -27,7 +36,8 @@ const menuContent = (props) => (
             </ul>
         <Icon name="logo" styles={Styles.Logo}/>
         </Styles.Wrapper>
-);
+	)
+};
 
 const mapStateToProps = state => {
     return {
