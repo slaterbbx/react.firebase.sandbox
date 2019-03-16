@@ -4,7 +4,8 @@ You need a firebase account and firebase credentials + firebase CLI to get the l
 
 ## setup your firebase
 
-create a credentials-fire.js file in the ./src/ folder that exports a default object like so.<br>
+Create a credentials-fire.js file in the ./src/ folder that exports a default object like so.<br>
+Make sure to replace all values with your firebase Web app credentials.
 ```javascript
 export default {
     apiKey: 'YOUR_API_KEY_HERE',
