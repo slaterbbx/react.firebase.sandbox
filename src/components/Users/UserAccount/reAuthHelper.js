@@ -1,31 +1,31 @@
 export default (code, message) => {
 
-	let needReLogin = null;
+	let needReAuth = null;
 	let error = null;
 
 	if (code === 'auth/requires-recent-login') {
-		needReLogin = true;
+		needReAuth = true;
 		error = {
-			value: true, 
+			isFail: true, 
 			code: code, 
 			message: message
 		}
 
 	} else if ( code !== 'auth/requires-recent-login' ) {
-		needReLogin = false;
+		needReAuth = false;
 		error = {
-			value: true, 
+			isFail: true, 
 			code: code, 
 			message: message
 		}
-	}
+	} 
 
 	return {
 		error: {
-			value: true, 
+			isFail: error.isFail, 
 			code: error.code, 
 			message: error.message
 		},
-		setNeedReLogin: needReLogin
+		setNeedReAuth: needReAuth
 	}
 }
