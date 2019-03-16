@@ -1,6 +1,7 @@
 import firebase from 'firebase/app';
 import 'firebase/firestore';
 import 'firebase/auth';
+import 'firebase/storage';
 
 import credentials from './credentials-fire';
 
@@ -17,6 +18,7 @@ const fire = firebase.initializeApp(config);
 export const fb = firebase; // houses firebase auth providers like firebase.EmailAuthProvider()
 export const auth = fire.auth();
 export const db = fire.firestore();
+export const storage = fire.storage();
 
 
 // https://firebase.google.com/docs/cli/
