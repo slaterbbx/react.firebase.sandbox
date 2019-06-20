@@ -1,6 +1,7 @@
 ### A few points 
 
-You need a firebase account and firebase credentials + firebase CLI to get the login working locally.<br>
+You need a firebase account and firebase credentials + firebase CLI to get the login working locally.<br><br>
+The purpose of this project is for me to learn Firebase, Firebase - firestore, hosting, cloud functions, auth, etc...
 
 ## setup your firebase
 
