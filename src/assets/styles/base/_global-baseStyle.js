@@ -25,7 +25,7 @@ const GlobalStyle = createGlobalStyle`
         color: ${({theme}) => theme.colorTertiary};
 
         :active,
-        :visited,{
+        :visited{
             color: ${({theme}) => theme.colorTertiary};
         }
     }

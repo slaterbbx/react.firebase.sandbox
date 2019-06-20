@@ -69,8 +69,9 @@ const userAccount = props => {
 
 		user.reauthenticateAndRetrieveDataWithCredential(credential).then(function() {
 			// User re-authenticated.
-			// Close modal used for delete account if its open
+			// Close modal used for delete account if its open, then delete account
 			setDelAccountModal(false);
+			confirmDeleteUserHandler();
 			// Close modal for error message / reAuth if they are open
 			props.onFailDismiss();
 			// set password back to an empty string
@@ -78,13 +79,15 @@ const userAccount = props => {
 			// run update email handler ( only needs to runs when we are reAuth for email update )
 			if (props.authEmail.validity){
 				updateEmailHandler();
+			} else { 
+				setNeedReAuth(false);
 			}
 
 		}).catch(function(error) {
 			// An error happened.
 			console.log('[ ERROR > During ReAuth ] ' , error);
+			setNeedReAuth(false);
 		});
-		setNeedReAuth(false);
 	}
 
 	// used for closing any custom modals specific to this page functionality
@@ -110,6 +113,8 @@ const userAccount = props => {
 			user.delete().then(function() {
 				// User deleted.
 				// because the authWatcher is global, the page will reload back to the Auth screen
+				// reset this just incase they create a new account
+				setDelAccount(false);
 			}).catch(function(error) {
 				// If error is that a reAuth is needed, then the reAuth modal will be shown
 				// reAuthHelper determines if the error is related to a reAuth needed
@@ -124,6 +129,8 @@ const userAccount = props => {
 	// checks for email address validity between what is shown and what exists on the server
 	// server always wins when in doubt
 	let uid;
+	let photoUrl;
+	let name;
 	if (user != null) {
 		// set "emailAddress" state to the logged in users email address
 		// if check here so that we do not hit an infinate loop
@@ -132,7 +139,19 @@ const userAccount = props => {
 		}
 	// This is just shown for debugging / testing reasons, remove in future
 	uid = user.uid;
+	photoUrl = user.photoURL;
+	name = user.displayName;
 	}
+
+	// if (user != null) {
+	// 	user.providerData.forEach(function (profile) {
+	// 	  console.log("Sign-in provider: " + profile.providerId);
+	// 	  console.log("  Provider-specific UID: " + profile.uid);
+	// 	  console.log("  Name: " + profile.displayName);
+	// 	  console.log("  Email: " + profile.email);
+	// 	  console.log("  Photo URL: " + profile.photoURL);
+	// 	});
+	//   }
 
 	// Dynamic page markup content
 	let markup;
@@ -171,6 +190,8 @@ const userAccount = props => {
         <>
         <p>{emailAddress}</p>
         <p>{uid}</p>
+		<p>{photoUrl}</p>
+		<p>{name}</p>
         <button onClick={signOutHandler}>LOGOUT</button><br />
         <button onClick={deleteUserHandler}>DELETE ACCOUNT!</button>
         <EmailValidator label="UPDATE YOUR EMAIL ADDRESS" />
